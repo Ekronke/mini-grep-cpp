@@ -1,4 +1,6 @@
 #include <string>
+#include <iomanip>
+#include <iostream>
 
 class Token {
     public:
@@ -58,9 +60,7 @@ class Lexer {
         Token next() noexcept;
 
     private:
-        Token identifier() noexcept;
-        Token number() noexcept;
-        Token slash_or_comment() noexcept;
+        Token literal() noexcept;
         Token atom(Token::Kind) noexcept;
 
         char peek() const noexcept { return *m_beg; }
@@ -69,29 +69,7 @@ class Lexer {
         const char* m_beg = nullptr;
 };
 
-bool is_space(char c) noexcept {
-    switch (c) {
-        case ' ':
-        case '\t':
-        case '\r':
-        case '\n':
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool is_digit(char c) noexcept {
-    switch (c) {
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool is_identifier_char(char c) noexcept {
+bool is_valid_char(char c) noexcept {
     switch (c) {
         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
         case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
@@ -103,7 +81,6 @@ bool is_identifier_char(char c) noexcept {
         case 'V': case 'W': case 'X': case 'Y': case 'Z':
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
-        case '_':
             return true;
         default:
             return false;
@@ -115,8 +92,6 @@ Token Lexer::atom(Token::Kind kind) noexcept {
 }
 
 Token Lexer::next() noexcept {
-    while (is_space(peek())) get();
-
     switch (peek()) {
         case '\0':
             return Token(Token::Kind::End, m_beg, 1);
@@ -130,10 +105,9 @@ Token Lexer::next() noexcept {
         case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
         case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
         case 'V': case 'W': case 'X': case 'Y': case 'Z':
-            return identifier();
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
-            return number();
+            return literal();
         case '|': return atom(Token::Kind::Union);
         case '*': return atom(Token::Kind::Closure);
         case '+': return atom(Token::Kind::OneOrMore);
@@ -144,36 +118,38 @@ Token Lexer::next() noexcept {
     }
 }
 
-Token Lexer::identifier() noexcept {
+Token Lexer::literal() noexcept {
     const char* start = m_beg;
     get();
-    while (is_identifier_char(peek())) get();
-    return Token(Token::Kind::Identifier, start, m_beg);
+    return Token(Token::Kind::Literal, start, m_beg);
 }
 
-Token Lexer::number() noexcept {
-    const char* start = m_beg;
-    get();
-    while (is_digit(peek())) get();
-    return Token(Token::Kind::Number, start, m_beg);
+std::ostream& operator<<(std::ostream& os, const Token::Kind& kind) {
+    static const char* const names[]{
+            "Unexpected",
+            "Literal",
+            "Union",
+            "Concatination",
+            "Closure",
+            "OneOrMore",
+            "ZeroOrOne",
+            "LeftParenthesis",
+            "RightParenthesis",
+            "Dot",
+            "End",
+    };
+    return os << names[static_cast<int>(kind)];
 }
 
-Token Lexer::slash_or_comment() noexcept {
-    const char* start = m_beg;
-    get();
-    if (peek() == '/') {
-        get();
-        start = m_beg;
-        while (peek() != '\0') {
-            if (get() == '\n') {
-                return Token(Token::Kind::Comment, start,
-                             std::distance(start, m_beg) - 1);
-            }
-        }
-        return Token(Token::Kind::Unexpected, m_beg, 1);
-    } else {
-        return Token(Token::Kind::Slash, start, 1);
+int main(void) {
+    auto code = 
+        "ab.cl(av)?d+";
+
+    Lexer lex(code);
+    for (auto token = lex.next();
+        not token.is_one_of(Token::Kind::End, Token::Kind::Unexpected);
+        token = lex.next()) {
+            std::cout << std::setw(12) << token.kind() << " |" << token.lexeme()
+            << "|\n";
     }
 }
-
-
