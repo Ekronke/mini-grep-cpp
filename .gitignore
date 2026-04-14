@@ -11,12 +11,6 @@
 *.gch
 *.pch
 
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
 # Compiled Dynamic libraries
 *.so
 *.dylib
@@ -37,5 +31,25 @@
 *.out
 *.app
 
-# debug information files
-*.dwo
+# CMake specific
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Build Directories (Catch-all for standard build folder names)
+build/
+build-*/
+out/
+bin/
+
+# IDE / Editor folders (Optional but recommended)
+.vscode/
+.idea/
+*.swp

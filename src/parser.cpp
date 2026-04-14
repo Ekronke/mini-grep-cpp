@@ -1,61 +1,92 @@
 #include "lexer.h"
+#include "parser.h"
 
+#include <expected>
 #include <variant>
 #include <memory>
 
-struct Node;
-struct DotNode;
-struct LiteralNode;
-struct ConcatNode;
-struct UnionNode;
-struct ClosureNode;
-struct OneOrMoreNode;
-struct ZeroOrOneNode;
+/* *
+ * PUBLIC 
+ * */
 
-struct SourceSpan {
-    size_t start;
-    size_t length;
-};
+Parser::ParseResult Parser::parse() noexcept {
+}
 
-using NodeHandler = std::unique_ptr<const Node>;
+/* *
+ * PRIVATE
+ * */
 
-struct DotNode {};
+void Parser::consume() noexcept {
+    token = lexer.next();
+}
 
-struct LiteralNode {
-    char literal;
-};
+bool Parser::match(Token::Kind expected_token_type) noexcept {
+    if (token.is(expected_token_type)) {
+        consume();
+        return true;
+    } else {
+        return false;
+    }
+}
 
-struct ConcatNode {
-    NodeHandler left;
-    NodeHandler right;
-};
+Parser::ParseResult Parser::parsePrimary() noexcept {
+    if (token.is(Token::Kind::Literal)) {
+        char c = token.lexeme()[0];
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            LiteralNode{c}
+        });
+        consume();
+        return node;
+    } else if (token.is(Token::Kind::Dot)) {
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            DotNode{}
+        });
+        consume();
+        return node;
+    } else if (token.is(Token::Kind::LeftParenthesis)) {
+        consume();
+        auto result = expect(Token::Kind::RightParenthesis);
+        if (!result) {
+            return std::unexpected(result.error());
+        }
+        parseUnion();
+    }
+}
 
-struct UnionNode {
-    NodeHandler left;
-    NodeHandler right;
-};
+Parser::ParseResult Parser::parseQuantifier() noexcept {
+    auto primary = parsePrimary();
+    if (!primary) {
+        return std::unexpected(primary.error());
+    }
 
-struct ClosureNode {
-    NodeHandler child; 
-};
+    if (token.is(Token::Kind::Closure)) {
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            ClosureNode{std::move(*primary)}
+        });
+        consume();
+        return node;
+    } else if (token.is(Token::Kind::OneOrMore)) {
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            OneOrMoreNode{std::move(*primary)}
+        });
+        consume();
+        return node;
+    } else if (token.is(Token::Kind::ZeroOrOne)) {
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            ZeroOrOneNode{std::move(*primary)}
+        });
+        consume();
+        return node;
+    }
+    return primary;
+}
 
-struct OneOrMoreNode {
-    NodeHandler child;
-};
-
-struct ZeroOrOneNode {
-    NodeHandler child;
-};
-
-struct Node {
-    SourceSpan span;
-    std::variant<LiteralNode,
-                 DotNode,
-                 ConcatNode, 
-                 UnionNode,
-                 ClosureNode,
-                 OneOrMoreNode,
-                 ZeroOrOneNode> kind; 
-};
+Parser::ParseResult Parser::parseConcat() noexcept {
+}
 
 
