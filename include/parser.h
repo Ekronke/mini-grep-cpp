@@ -6,6 +6,7 @@
 #include <variant>
 #include <memory>
 #include <expected>
+#include <expected>
 #include <string.h>
 
 struct Node;
@@ -83,15 +84,12 @@ class Parser {
         Lexer lexer;
         Token token;
         
-
         void consume() noexcept;
         bool match(Token::Kind expected_token_type) noexcept;
-
         std::expected<void, ParseError> expect(Token::Kind expected_token_type) noexcept;
 
-        // Recursive descent methods
-        NodeHandler parsePrimary() noexcept;
-        NodeHandler parseQuantifier() noexcept;
-        NodeHandler parseConcat() noexcept;
-        NodeHandler parseUnion() noexcept;
+        ParseResult parsePrimary() noexcept;
+        ParseResult parseQuantifier() noexcept;
+        ParseResult parseConcat() noexcept;
+        ParseResult parseUnion() noexcept;
 };
