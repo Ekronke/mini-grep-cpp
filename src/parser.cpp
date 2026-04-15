@@ -10,6 +10,19 @@
  * */
 
 Parser::ParseResult Parser::parse() noexcept {
+    auto root = parseUnion();
+    if (!root) {
+        return std::unexpected(root.error());
+    }
+
+    if (token.is_not(Token::Kind::End)) {
+        return std::unexpected(ParseError{
+            "Unexpected token after expression.",
+            token.kind(),
+            SourceSpan{0,1}
+        });
+    }
+    return root;
 }
 
 /* *
@@ -27,6 +40,18 @@ bool Parser::match(Token::Kind expected_token_type) noexcept {
     } else {
         return false;
     }
+}
+
+std::expected<void, ParseError> Parser::expect(Token::Kind expected_token_type) noexcept {
+    if (token.is(expected_token_type)) {
+        consume();
+        return {};
+    }
+    return std::unexpected(ParseError{
+        "Unexpected token",
+        token.kind(),
+        SourceSpan{0, 1}
+    });
 }
 
 Parser::ParseResult Parser::parsePrimary() noexcept {
@@ -47,12 +72,21 @@ Parser::ParseResult Parser::parsePrimary() noexcept {
         return node;
     } else if (token.is(Token::Kind::LeftParenthesis)) {
         consume();
+        auto inner = parseUnion();
+        if (!inner) {
+            return std::unexpected(inner.error());
+        }
         auto result = expect(Token::Kind::RightParenthesis);
         if (!result) {
             return std::unexpected(result.error());
         }
-        parseUnion();
+        return inner;
     }
+    return std::unexpected(ParseError{
+        "Unexpected token after expression.",
+        token.kind(),
+        SourceSpan{0,1}
+    });
 }
 
 Parser::ParseResult Parser::parseQuantifier() noexcept {
@@ -87,6 +121,45 @@ Parser::ParseResult Parser::parseQuantifier() noexcept {
 }
 
 Parser::ParseResult Parser::parseConcat() noexcept {
+    auto left = parseQuantifier();
+    if (!left) {
+        return std::unexpected(left.error());
+    }
+
+    if(token.is_one_of(Token::Kind::Literal, Token::Kind::Dot, Token::Kind::LeftParenthesis)) {
+        auto right = parseConcat();
+        if (!right) {
+            return std::unexpected(right.error());
+        }
+
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            ConcatNode{std::move(*left), std::move(*right)}
+        });
+        return node;
+    }
+    return left;
 }
 
+Parser::ParseResult Parser::parseUnion() noexcept {
+    auto left = parseConcat();
+    if (!left) {
+        return std::unexpected(left.error());
+    }
+    
+    if(token.is(Token::Kind::Union)) {
+        consume();
+        auto right = parseUnion();
+        if (!right) {
+            return std::unexpected(right.error());
+        }
+
+        auto node = std::make_unique<Node>(Node{
+            SourceSpan{0, 1},
+            UnionNode{std::move(*left), std::move(*right)}
+        });
+        return node;
+    }
+    return left;
+}
 
