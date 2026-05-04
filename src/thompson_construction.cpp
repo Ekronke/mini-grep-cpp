@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "thompson_construction.h"
 
+#include <iostream>
 #include <variant>
 
 State NFA::fresh() {
@@ -20,6 +21,18 @@ void NFA::addDotTransition(State from, State to) {
     transitions[from].push_back({Transition::Label::AnyChar, '\1', to});
 }
 
+void NFA::printAutomata() {
+    std::cout << "Start: " << getStart() << "Accepting: " << getAccept() << '\n';
+    
+    for (size_t i = 0; i < size(); i++) {
+        std::cout << "State " << i << ':';
+        for (auto &transition : transitionsFrom(i)) {
+            std::cout << " --> " << transition.c << "-->" << transition.destination;
+        }
+        std::cout << '\n';
+    }
+}
+
 namespace {
 
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
@@ -34,7 +47,7 @@ Fragment buildLiteral(NFA& nfa, const LiteralNode& n) {
     return {s, f};
 }
 
-Fragment bulidDot(NFA& nfa) {
+Fragment buildDot(NFA& nfa) {
     State s = nfa.fresh();
     State f = nfa.fresh();
     nfa.addDotTransition(s,f); 
@@ -42,17 +55,17 @@ Fragment bulidDot(NFA& nfa) {
 }
 
 Fragment buildConcat(NFA& nfa, const ConcatNode& n) {
-    Fragment left = nfa.build(nfa, *n.left);
-    Fragment right = nfa.build(nfa, *n.right);
+    Fragment left = build(nfa, *n.left);
+    Fragment right = build(nfa, *n.right);
     nfa.addEpsilonTransition(left.accept, right.start);
-    return {left.accept, right.start};
+    return {left.start, right.accept};
 }
 
 Fragment buildUnion(NFA& nfa, const UnionNode& n) {
     State s = nfa.fresh();
     State f = nfa.fresh();
-    Fragment left = nfa.build(nfa, *n.left);
-    Fragment right = nfa.build(nfa, *n.right);
+    Fragment left = build(nfa, *n.left);
+    Fragment right = build(nfa, *n.right);
     nfa.addEpsilonTransition(s, left.start);
     nfa.addEpsilonTransition(s, right.start);
     nfa.addEpsilonTransition(left.accept, f);
@@ -68,8 +81,29 @@ Fragment buildClosure(NFA& nfa, const ClosureNode& n) {
     nfa.addEpsilonTransition(s, f);
     nfa.addEpsilonTransition(inner.accept, inner.start);
     nfa.addEpsilonTransition(inner.accept, f);
-    
 
+    return {s, f};
+}
+
+Fragment buildOneOrMore(NFA& nfa, const OneOrMoreNode& n) {
+    State s = nfa.fresh();
+    State f = nfa.fresh();
+    Fragment inner = build(nfa, *n.child);
+    nfa.addEpsilonTransition(s, inner.start);
+    nfa.addEpsilonTransition(inner.accept, inner.start);
+    nfa.addEpsilonTransition(inner.accept, f);
+
+    return {s, f};
+}
+
+Fragment buildZeroOrOne(NFA& nfa, const ZeroOrOneNode& n) {
+    State s = nfa.fresh();
+    State f = nfa.fresh();
+    Fragment inner = build(nfa, *n.child);
+    nfa.addEpsilonTransition(s, inner.start);
+    nfa.addEpsilonTransition(inner.accept, f);
+
+    return {s, f};
 }
 
 Fragment build(NFA& nfa, const Node& node) {
@@ -84,8 +118,8 @@ Fragment build(NFA& nfa, const Node& node) {
     }, node.kind);
 }
 
-
 } // namespace
+
 
 NFA buildNFA(const Node& ast) {
     NFA nfa;
