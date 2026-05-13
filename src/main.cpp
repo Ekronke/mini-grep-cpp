@@ -27,14 +27,19 @@ int main() {
         std::vector<char> alphabet(alphabetStr.begin(), alphabetStr.end());
         const char* regExpr = regExprStr.c_str();
 
+        // PARSE
         Parser parser(regExpr);
         auto ast = parser.parse();
         if (!ast) {
             std::cerr << "parse error: " << ast.error().message << "\n";
             return 1;
         }
-        NFA nfa = buildNFA(**ast);   
 
+        // THOMPSON CONSTRUCTION
+        NFA nfa = buildNFA(**ast);   
+        nfa.printAutomata();
+        
+        // ε-NFA to DFA
 
         while (inFil) { 
             std::getline(inFil, line);
@@ -44,5 +49,7 @@ int main() {
     } else {
         std::cout << "File could not be opened!!";
     }
+    
+    return 0;
 }
 

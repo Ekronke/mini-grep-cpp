@@ -75,15 +75,15 @@ std::ostream& operator<<(std::ostream& os, const Token::Kind& kind) {
     return os << names[static_cast<int>(kind)];
 }
 
-int main(void) {
-    auto code = 
-        "ab.cl(av)?d+";
-
-    Lexer lex(code);
-    for (auto token = lex.next();
-        not token.is_one_of(Token::Kind::End, Token::Kind::Unexpected);
-        token = lex.next()) {
-            std::cout << std::setw(12) << token.kind() << " |" << token.lexeme()
-            << "|\n";
-    }
-}
+// int main(void) {
+//     auto code = 
+//         "ab.cl(av)?d+";
+//
+//     Lexer lex(code);
+//     for (auto token = lex.next();
+//         not token.is_one_of(Token::Kind::End, Token::Kind::Unexpected);
+//         token = lex.next()) {
+//             std::cout << std::setw(12) << token.kind() << " |" << token.lexeme()
+//             << "|\n";
+//     }
+// }

@@ -22,12 +22,26 @@ void NFA::addDotTransition(State from, State to) {
 }
 
 void NFA::printAutomata() {
-    std::cout << "Start: " << getStart() << "Accepting: " << getAccept() << '\n';
-    
+    std::cout << "Start: " << getStart() << '\n' << "Accepting: ";
+    for (auto& s : getAccept()) {
+        std::cout << s << ' ';
+    }
+    std::cout << '\n';
+
     for (size_t i = 0; i < size(); i++) {
-        std::cout << "State " << i << ':';
+        std::cout << i;
         for (auto &transition : transitionsFrom(i)) {
-            std::cout << " --> " << transition.c << "-->" << transition.destination;
+            std::cout << " --> ";
+            
+            if (transition.label == Transition::Label::Epsilon) {
+                std::cout << "ε";    
+            } else if (transition.label == Transition::Label::AnyChar) {
+                std::cout << "ANY";
+            } else {
+                std::cout << transition.c; 
+            }
+            
+            std::cout << " --> " << transition.destination;
         }
         std::cout << '\n';
     }
@@ -101,6 +115,7 @@ Fragment buildZeroOrOne(NFA& nfa, const ZeroOrOneNode& n) {
     State f = nfa.fresh();
     Fragment inner = build(nfa, *n.child);
     nfa.addEpsilonTransition(s, inner.start);
+    nfa.addEpsilonTransition(s, f);
     nfa.addEpsilonTransition(inner.accept, f);
 
     return {s, f};
@@ -119,7 +134,6 @@ Fragment build(NFA& nfa, const Node& node) {
 }
 
 } // namespace
-
 
 NFA buildNFA(const Node& ast) {
     NFA nfa;
