@@ -1,0 +1,7 @@
+There are five input files, structured as follows:
+Line 1: The alphabet
+Line 2: The regular expression
+Line 3-*: The lines to search in.
+
+Note: The characters " " (space), "/", and "\" are part of the alphabet.
+A hint is that, if youre implementation is correct, a nice pattern should reveal itself.

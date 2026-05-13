@@ -1,6 +1,6 @@
-#include "lexer.h"
 #include "parser.h"
 #include "thompson_construction.h"
+#include "subset_construction.h"
 
 #include <fstream>
 #include <iostream>
@@ -36,10 +36,19 @@ int main() {
         }
 
         // THOMPSON CONSTRUCTION
+        std::cout << "THOMPSON CONSTRUCTION \n";
         NFA nfa = buildNFA(**ast);   
         nfa.printAutomata();
         
         // ε-NFA to DFA
+        std::cout << "ε-NFA to DFA \n";
+        NFA dfa = buildDFA(nfa);
+        dfa.printAutomata();
+
+        // DFA minimazation
+
+
+        // grep 
 
         while (inFil) { 
             std::getline(inFil, line);
