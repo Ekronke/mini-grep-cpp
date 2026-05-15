@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(mini-grep src/main.cpp src/lexer.cpp src/parser.cpp src/thompson_construction.cpp src/subset_construction.cpp)
+add_executable(mini-grep src/main.cpp src/lexer.cpp src/parser.cpp src/thompson_construction.cpp src/subset_construction.cpp src/table_filling.cpp)
 
 target_include_directories(mini-grep PRIVATE include)
 
